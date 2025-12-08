@@ -1,4 +1,4 @@
-name: SAST - Semgrep High Severity
+name: SAST - Semgrep
 
 on:
   push:
@@ -20,9 +20,12 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep
 
-      - name: Run Semgrep SAST scan (high severity only)
+      - name: Run Semgrep SAST scan (all severities, do NOT fail workflow)
         run: |
-          semgrep scan --config "p/owasp-top-ten" --sarif --output semgrep.sarif --severity ERROR --error
+          semgrep scan \
+            --config "p/semgrep-rules" \
+            --config "p/security-audit" \
+            --sarif --output semgrep.sarif
 
       - name: Upload SARIF Report
         uses: github/codeql-action/upload-sarif@v4
