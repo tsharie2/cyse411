@@ -1,2 +1,2 @@
 DDDD
-I went to the store
+Triggering Semgrep scan
