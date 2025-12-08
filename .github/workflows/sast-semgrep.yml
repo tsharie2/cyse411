@@ -20,12 +20,13 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep
 
-      - name: Run Semgrep SAST scan (all severities, do NOT fail workflow)
+      - name: Run Semgrep SAST scan (all severities, do NOT fail CI)
         run: |
           semgrep scan \
             --config "p/semgrep-rules" \
             --config "p/security-audit" \
-            --sarif --output semgrep.sarif
+            --sarif --output semgrep.sarif \
+            .
 
       - name: Upload SARIF Report
         uses: github/codeql-action/upload-sarif@v4
