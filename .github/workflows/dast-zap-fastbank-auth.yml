@@ -42,16 +42,16 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-json
-        path: fastbank-auth-lab/report_json.json
+        path: fastbank-auth-lab
 
     - name: Upload HTML report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-html
-        path: fastbank-auth-lab/report_html.html
+        path: fastbank-auth-lab
 
     - name: Upload Markdown report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-md
-        path: fastbank-auth-lab/report_md.md
+        path: fastbank-auth-lab
