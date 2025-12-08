@@ -42,16 +42,16 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-json
-        path: idor/report_json.json
+        path: idor
 
     - name: Upload HTML report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-html
-        path: idor/report_html.html
+        path: idor
 
     - name: Upload Markdown report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-md
-        path: idor/report_md.md
+        path: idor
