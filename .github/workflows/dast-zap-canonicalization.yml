@@ -23,10 +23,10 @@ jobs:
         working-directory: ./canonicalization-example
         run: |
           nohup npm start &
-          sleep 10
+          sleep 20
 
       - name: Run OWASP ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.5.0
         with:
           target: http://localhost:3000
-          fail_on_warning: true
+          fail_action: stop
