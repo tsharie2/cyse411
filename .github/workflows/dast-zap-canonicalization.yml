@@ -42,16 +42,16 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-json
-        path: canonicalization-example/report_json.json
+        path: canonicalization-example
 
     - name: Upload HTML report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-html
-        path: canonicalization-example/report_html.html
+        path: canonicalization-example
 
     - name: Upload Markdown report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report-md
-        path: canonicalization-example/report_md.md
+        path: canonicalization-example
