@@ -22,7 +22,7 @@ jobs:
 
       - name: Run Semgrep SAST scan (high severity only)
         run: |
-          semgrep scan --config "p/owasp-top-ten" --sarif --output semgrep.sarif --severity HIGH --error
+          semgrep scan --config "p/owasp-top-ten" --sarif --output semgrep.sarif --severity ERROR --error
 
       - name: Upload SARIF Report
         uses: github/codeql-action/upload-sarif@v2
