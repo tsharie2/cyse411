@@ -20,11 +20,13 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep
 
-      - name: Run Semgrep SAST scan (all severities, do NOT fail CI)
+      - name: Run Semgrep SAST scan
         run: |
           semgrep scan \
             --config "p/semgrep-rules" \
             --config "p/security-audit" \
+            --include '**' \
+            --exclude '.git' \
             --sarif --output semgrep.sarif \
             .
 
