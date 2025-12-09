@@ -11,50 +11,34 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+        
     - name: Install dependencies
       run: npm install
       working-directory: canonicalization-example
+      
     - name: Start server
       run: npm start &
       working-directory: canonicalization-example
+      
     - name: Wait for server
       run: |
         echo "Waiting for server to start..."
         for i in {1..15}; do
           if curl -s http://localhost:3000 > /dev/null 2>&1; then
-            echo "Server is ready!"
+            echo "✅ Server is ready on port 3000"
             exit 0
           fi
           sleep 2
         done
-        echo "Server failed to start"
+        echo "❌ Server failed to start"
         exit 1
+        
     - name: Run OWASP ZAP Full Scan
-      uses: zaproxy/action-full-scan@v0.6.0
+      uses: zaproxy/action-full-scan@v0.12.0
       with:
         target: 'http://localhost:3000'
-        fail_action: 'true'
-        cmd_options: '-J report_json.json -r report_html.html -w report_md.md'
-      continue-on-error: true
-    - name: Upload JSON report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: zap-report-json
-        path: report_json.json
-    - name: Upload HTML report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: zap-report-html
-        path: report_html.html
-    - name: Upload Markdown report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: zap-report-md
-        path: report_md.md
