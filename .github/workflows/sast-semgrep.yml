@@ -2,40 +2,89 @@ name: SAST - Semgrep
 
 on:
   push:
+    branches: [ main, master ]
   pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
   semgrep:
+    name: Semgrep Security Scan
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # ensures full repo is downloaded
-
+          fetch-depth: 0
+      
       - name: Show files GitHub checked out
         run: |
           echo "==== ROOT DIRECTORY ===="
           ls -al
           echo ""
+          echo "==== SCANNING THESE DIRECTORIES ===="
+          echo "canonicalization-example:"
+          ls -la canonicalization-example/ || echo "Directory not found"
+          echo ""
+          echo "idor:"
+          ls -la idor/ || echo "Directory not found"
+          echo ""
+          echo "fastbank-auth-lab:"
+          ls -la fastbank-auth-lab/ || echo "Directory not found"
+          echo ""
           echo "==== FULL FILE TREE ===="
-          ls -R .
-
+          find . -type f -name "*.py" -o -name "*.js" -o -name "*.json" | head -20
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
       - name: Install Semgrep
-        run: pip install semgrep
-
-      - name: Run Semgrep Scan (JS + JSON only)
+        run: |
+          pip install semgrep
+          semgrep --version
+      
+      - name: Run Semgrep Scan (All Languages)
         run: |
           semgrep scan \
-            --config p/semgrep-rules \
-            --config p/security-audit \
-            --include "**/*.js" \
-            --include "**/*.json" \
-            . \
-            --sarif --output semgrep.sarif || true
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
+            --config=p/owasp-top-ten \
+            --config=p/security-audit \
+            --config=p/python \
+            --config=p/flask \
+            --config=p/javascript \
+            --sarif \
+            --output=semgrep.sarif \
+            --verbose \
+            --error \
+            .
+        continue-on-error: true
+      
+      - name: Show Semgrep Results (Text)
+        if: always()
+        run: |
+          echo "==== SEMGREP SCAN COMPLETED ===="
+          semgrep scan \
+            --config=p/owasp-top-ten \
+            --config=p/security-audit \
+            --config=p/python \
+            --config=p/flask \
+            . || true
+      
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
         with:
           sarif_file: semgrep.sarif
+      
+      - name: Upload Semgrep Results as Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-results
+          path: semgrep.sarif
