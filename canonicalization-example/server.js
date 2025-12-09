@@ -12,20 +12,35 @@ app.use(express.static(path.join(__dirname, 'public')));
 const BASE_DIR = path.resolve(__dirname, 'files');
 if (!fs.existsSync(BASE_DIR)) fs.mkdirSync(BASE_DIR, { recursive: true });
 
-// helper to canonicalize and check
+/**
+ * Safely resolves a user-supplied path relative to a base directory.
+ * Ensures the returned path is nested inside BASE_DIR.
+ */
 function resolveSafe(baseDir, userInput) {
   try {
     userInput = decodeURIComponent(userInput);
   } catch (e) {}
-  return path.resolve(baseDir, userInput);
+
+  // Normalize and resolve path
+  const resolved = path.resolve(baseDir, userInput);
+
+  // Prevent path traversal by verifying the prefix
+  if (!resolved.startsWith(baseDir + path.sep)) {
+    return null;
+  }
+
+  return resolved;
 }
 
-// Secure route
+/**
+ * -----------------------
+ * SECURE READ ENDPOINT
+ * -----------------------
+ */
 app.post(
   '/read',
   body('filename')
     .exists().withMessage('filename required')
-    .bail()
     .isString()
     .trim()
     .notEmpty().withMessage('filename must not be empty')
@@ -35,45 +50,72 @@ app.post(
     }),
   (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
     const filename = req.body.filename;
-    const normalized = resolveSafe(BASE_DIR, filename);
-    if (!normalized.startsWith(BASE_DIR + path.sep)) {
+    const safePath = resolveSafe(BASE_DIR, filename);
+
+    if (!safePath) {
       return res.status(403).json({ error: 'Path traversal detected' });
     }
-    if (!fs.existsSync(normalized)) return res.status(404).json({ error: 'File not found' });
 
-    const content = fs.readFileSync(normalized, 'utf8');
-    res.json({ path: normalized, content });
+    if (!fs.existsSync(safePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const content = fs.readFileSync(safePath, 'utf8');
+    res.json({ path: safePath, content });
   }
 );
 
-// Vulnerable route (demo)
+/**
+ * -----------------------
+ * FIXED VERSION OF VULNERABLE ROUTE
+ * (replaces /read-no-validate)
+ * -----------------------
+ */
 app.post('/read-no-validate', (req, res) => {
   const filename = req.body.filename || '';
-  const joined = path.join(BASE_DIR, filename); // intentionally vulnerable
-  if (!fs.existsSync(joined)) return res.status(404).json({ error: 'File not found', path: joined });
-  const content = fs.readFileSync(joined, 'utf8');
-  res.json({ path: joined, content });
+
+  const safePath = resolveSafe(BASE_DIR, filename);
+  if (!safePath) {
+    return res.status(403).json({ error: 'Path traversal detected' });
+  }
+
+  if (!fs.existsSync(safePath)) {
+    return res.status(404).json({ error: 'File not found', path: safePath });
+  }
+
+  const content = fs.readFileSync(safePath, 'utf8');
+  res.json({ path: safePath, content });
 });
 
-// Helper route for samples
+/**
+ * -----------------------
+ * SAMPLE FILE SETUP
+ * -----------------------
+ */
 app.post('/setup-sample', (req, res) => {
   const samples = {
     'hello.txt': 'Hello from safe file!\n',
     'notes/readme.md': '# Readme\nSample readme file'
   };
-  Object.keys(samples).forEach(k => {
-    const p = path.resolve(BASE_DIR, k);
-    const d = path.dirname(p);
-    if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-    fs.writeFileSync(p, samples[k], 'utf8');
+
+  Object.entries(samples).forEach(([relativePath, fileContent]) => {
+    const filePath = path.resolve(BASE_DIR, relativePath);
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(filePath, fileContent, 'utf8');
   });
+
   res.json({ ok: true, base: BASE_DIR });
 });
 
-// Only listen when run directly (not when imported by tests)
+/**
+ * Only listen when run directly
+ */
 if (require.main === module) {
   const port = process.env.PORT || 4000;
   app.listen(port, () => {
