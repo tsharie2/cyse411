@@ -38,23 +38,23 @@ jobs:
       with:
         target: 'http://localhost:3000'
         fail_action: 'true'
-        cmd_options: '-J canonicalization-example/report_json.json -r canonicalization-example/report_html.html -w canonicalization-example/report_md.md'
+        cmd_options: '-J canonicalization-example -r canonicalization-example -w canonicalization-example'
       continue-on-error: true
     - name: Upload JSON report
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: zap-report-json
-        path: canonicalization-example/report_json.json
+        path: canonicalization-example
     - name: Upload HTML report
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: zap-report-html
-        path: canonicalization-example/report_html.html
+        path: canonicalization-example
     - name: Upload Markdown report
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: zap-report-md
-        path: canonicalization-example/report_md.md
+        path: canonicalization-example
