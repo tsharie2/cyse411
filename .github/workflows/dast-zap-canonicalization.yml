@@ -1,4 +1,4 @@
-=name: DAST - OWASP ZAP (canonicalization-example)
+name: DAST - OWASP ZAP (canonicalization-example)
 on:
   workflow_dispatch:
   push:
@@ -22,39 +22,25 @@ jobs:
       run: npm start &
       working-directory: canonicalization-example
     - name: Wait for server
-      run: |
-        echo "Waiting for server to start..."
-        for i in {1..15}; do
-          if curl -s http://localhost:3000 > /dev/null 2>&1; then
-            echo "Server is ready!"
-            exit 0
-          fi
-          sleep 2
-        done
-        echo "Server failed to start"
-        exit 1
+      run: sleep 20
     - name: Run OWASP ZAP Full Scan
       uses: zaproxy/action-full-scan@v0.6.0
       with:
-        target: 'http://localhost:3000'
+        target: 'http://host.docker.internal:3000'
         fail_action: 'true'
-        cmd_options: '-J canonicalization-example -r canonicalization-example -w canonicalization-example'
-      continue-on-error: true
+        cmd_options: '-J report_json.json -r report_html.html -w report_md.md'
     - name: Upload JSON report
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: zap-report-json
         path: canonicalization-example
     - name: Upload HTML report
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: zap-report-html
         path: canonicalization-example
     - name: Upload Markdown report
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: zap-report-md
         path: canonicalization-example
