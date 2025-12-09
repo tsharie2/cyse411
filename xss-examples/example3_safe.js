@@ -1,11 +1,16 @@
-const escapeHtml = s => s
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#x27;');
+const express = require('express');
+const path = require('path');
 
+const app = express();
+
+// Configure EJS template engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Safe search route
 app.get('/search', (req, res) => {
-  const q = escapeHtml(req.query.q || '');
-  res.send(`<h1>Results for ${q}</h1>`);
+  const q = req.query.q || '';
+  res.render('search', { query: q });
 });
+
+module.exports = app;
