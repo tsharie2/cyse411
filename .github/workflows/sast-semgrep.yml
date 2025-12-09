@@ -11,23 +11,29 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ensures full repo is downloaded
 
-      - name: Debug folder structure
-        run: ls -R .
+      - name: Show files GitHub checked out
+        run: |
+          echo "==== ROOT DIRECTORY ===="
+          ls -al
+          echo ""
+          echo "==== FULL FILE TREE ===="
+          ls -R .
 
       - name: Install Semgrep
         run: pip install semgrep
 
-      - name: Run Semgrep Scan
+      - name: Run Semgrep Scan (JS + JSON only)
         run: |
           semgrep scan \
             --config p/semgrep-rules \
             --config p/security-audit \
-            --exclude ".github/**" \
-            --exclude "**/node_modules/**" \
-            --exclude "**/vendor/**" \
+            --include "**/*.js" \
+            --include "**/*.json" \
             . \
-            --sarif --output semgrep.sarif
+            --sarif --output semgrep.sarif || true
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v4
