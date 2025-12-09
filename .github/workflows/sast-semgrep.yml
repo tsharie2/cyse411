@@ -12,6 +12,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug folder structure
+        run: ls -R .
+
       - name: Install Semgrep
         run: pip install semgrep
 
@@ -23,12 +26,7 @@ jobs:
             --exclude ".github/**" \
             --exclude "**/node_modules/**" \
             --exclude "**/vendor/**" \
-            canonicalization-example \
-            fastbank-auth-lab \
-            fastbank_insecure_classwork \
-            idor \
-            sql-examples \
-            xss-examples \
+            . \
             --sarif --output semgrep.sarif
 
       - name: Upload SARIF
