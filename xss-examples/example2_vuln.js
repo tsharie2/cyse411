@@ -1,4 +1,8 @@
-// vulnerable: dangerouslySetInnerHTML
+import DOMPurify from "dompurify";
+
 function Comment({ html }) {
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  const safeHtml = DOMPurify.sanitize(html);
+  return <div dangerouslySetInnerHTML={{ __html: safeHtml }} />;
 }
+
+export default Comment;
