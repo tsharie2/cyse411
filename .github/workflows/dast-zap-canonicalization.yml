@@ -22,23 +22,71 @@ jobs:
       working-directory: canonicalization-example
       
     - name: Start server
-      run: npm start &
-      working-directory: canonicalization-example
+      run: |
+        cd canonicalization-example
+        npm start > server.log 2>&1 &
+        echo $! > server.pid
+        echo "Server started with PID: $(cat server.pid)"
       
-    - name: Wait for server
+    - name: Wait for server and check logs
       run: |
         echo "Waiting for server to start..."
-        for i in {1..15}; do
+        sleep 5
+        
+        echo "=== Checking server process ==="
+        if [ -f canonicalization-example/server.pid ]; then
+          PID=$(cat canonicalization-example/server.pid)
+          if ps -p $PID > /dev/null; then
+            echo "✅ Server process is running (PID: $PID)"
+          else
+            echo "❌ Server process died"
+            cat canonicalization-example/server.log
+            exit 1
+          fi
+        fi
+        
+        echo "=== Checking ports ==="
+        netstat -tuln | grep LISTEN || echo "No listening ports found"
+        
+        echo "=== Trying to connect ==="
+        for i in {1..20}; do
+          echo "Attempt $i/20..."
+          
+          # Try common ports
           if curl -s http://localhost:3000 > /dev/null 2>&1; then
-            echo "✅ Server is ready on port 3000"
+            echo "✅ Server responding on port 3000!"
+            curl -I http://localhost:3000
+            exit 0
+          elif curl -s http://localhost:8080 > /dev/null 2>&1; then
+            echo "✅ Server responding on port 8080!"
+            curl -I http://localhost:8080
+            exit 0
+          elif curl -s http://localhost:5000 > /dev/null 2>&1; then
+            echo "✅ Server responding on port 5000!"
+            curl -I http://localhost:5000
             exit 0
           fi
+          
           sleep 2
         done
-        echo "❌ Server failed to start"
+        
+        echo "❌ Server not responding on any common port"
+        echo "=== Server logs ==="
+        cat canonicalization-example/server.log
+        
+        echo "=== package.json start script ==="
+        cat canonicalization-example/package.json | grep -A 2 '"scripts"'
+        
         exit 1
         
     - name: Run OWASP ZAP Full Scan
       uses: zaproxy/action-full-scan@v0.12.0
       with:
         target: 'http://localhost:3000'
+        
+    - name: Upload server logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: server-logs
+        path: canonicalization-example/server.log
